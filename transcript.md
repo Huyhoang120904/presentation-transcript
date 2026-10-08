@@ -38,7 +38,7 @@ Leafy’s physical node is based on an ESP32-CAM. A DHT11 measures air temperatu
 
 The node publishes telemetry through MQTT to the backend. The system stores raw data in PostgreSQL, keeps a current snapshot, and builds five-minute, hourly, and daily aggregates for the web and mobile dashboards. When a reading crosses a configured threshold, the platform can generate an alert and send a push notification. These readings can also enter the advisory context. The paper verifies this complete flow with a physical prototype, while leaving long-term calibration and weak-network reliability for future testing.
 
-Slide 9 — RAG System Pipeline (0:45)
+##  Slide 9 — RAG System Pipeline (0:45)
 
 The RAG workflow has four main stages: retrieve, route, plan, and audit.
 
@@ -52,7 +52,7 @@ Finally, a safety audit checks the draft before it is returned.
 
 The following slides highlight three important algorithms in this workflow.
 
-Slide 10 — Hybrid Retrieval (0:30)
+## Slide 10 — Hybrid Retrieval (0:30)
 
 Algorithm 1 describes our hybrid retrieval strategy.
 
@@ -64,7 +64,7 @@ A subsequent reranker selects the most relevant passages for generation.
 
 This procedure is implemented, although retrieval quality has not yet been quantitatively evaluated.
 
-Slide 11 — Context-Aware Treatment Planning (0:35)
+## Slide 11 — Context-Aware Treatment Planning (0:35)
 
 Algorithm 3 describes how the system generates treatment plans.
 
@@ -76,7 +76,7 @@ The language model then generates a structured plan containing treatment measure
 
 This relevance threshold acts as a planning gate, rather than a guarantee of advice quality.
 
-Slide 12 — Safety Audit (0:35)
+## Slide 12 — Safety Audit (0:35)
 
 Algorithm 4 introduces a safety-audit stage for generated treatment plans.
 
@@ -88,7 +88,7 @@ If issues are detected, the plan can be returned for refinement.
 
 This mechanism provides an additional screening layer, but its effectiveness still requires quantitative evaluation and expert validation.
 
-Slide 13 — Experimental Setup (0:50)
+## Slide 13 — Experimental Setup (0:50)
 
 We now move to experimental evaluation.
 
@@ -102,7 +102,7 @@ The IoT and RAG components were evaluated through functional integration rather 
 
 An important limitation is that the 806-image evaluation set also served as the reported validation and test set. Independent field validation remains necessary.
 
-Slide 14 — MobileNetV2 Classification Results (0:50)
+## Slide 14 — MobileNetV2 Classification Results (0:50)
 
 This chart compares MobileNetV2 performance across five training runs.
 
@@ -116,7 +116,7 @@ These results suggest relatively consistent performance across different initial
 
 However, they were obtained from the same evaluation dataset, so they do not establish generalization to new farms or image-capture conditions.
 
-Slide 15 — MobileNetV2 Training Curves (0:35)
+## Slide 15 — MobileNetV2 Training Curves (0:35)
 
 This figure shows the selected model's training process.
 
@@ -128,7 +128,7 @@ By epoch twenty-five, validation accuracy reached 95.04 percent.
 
 These curves illustrate the optimization process, while independent external evaluation remains future work.
 
-Slide 16 — Confusion Matrix (0:40)
+## Slide 16 — Confusion Matrix (0:40)
 
 The confusion matrix provides a more detailed view of classification errors.
 
@@ -142,7 +142,7 @@ This is particularly important because missed disease cases could affect subsequ
 
 Therefore, improving difficult-class recognition remains a priority.
 
-Slide 17 — YOLOv8n Detection Results (0:40)
+## Slide 17 — YOLOv8n Detection Results (0:40)
 
 Next, we evaluate the leaf-localization model.
 
@@ -156,7 +156,7 @@ These results demonstrate promising performance for leaf localization.
 
 However, these are detection metrics and should not be interpreted as disease-classification accuracy.
 
-Slide 18 — Results and Future Work (0:55)
+## Slide 18 — Results and Future Work (0:55)
 
 Beyond the individual models, we also tested the integrated prototype.
 
@@ -170,7 +170,7 @@ However, several aspects remain unbenchmarked, including inference latency acros
 
 These are important next steps before wider deployment.
 
-Slide 19 — Conclusion and Validation Priorities (0:55)
+## Slide 19 — Conclusion and Validation Priorities (0:55)
 
 To conclude, Leafy's main contribution is the integration of edge AI, environmental sensing, and retrieval-augmented decision support into one framework.
 
@@ -186,7 +186,7 @@ For RAG, we need retrieval and answer-quality benchmarks, safety-audit testing, 
 
 These evaluations are necessary to establish the system's practical reliability.
 
-Slide 20 — Thank You (0:15)
+## Slide 20 — Thank You (0:15)
 
 Thank you for your attention.
 
