@@ -10,10 +10,6 @@ Good morning, everyone. Today I’m presenting Leafy, our framework for intellig
 
 I’ll explain how the system is built, show the results we measured for leaf localization and disease classification, and distinguish those measurements from the parts of the prototype that we verified functionally. The main question throughout is how to move from a disease label toward a more useful field decision.
 
-## Slide 2  Hybrid retrieval combines two searches    0:45
-
-Before the overview, this slide highlights one technical building block of Leafy: hybrid retrieval. Algorithm 1 retrieves twenty candidates with dense vector search and twenty with BM25 keyword search. Dense search finds material with related meaning, while BM25 matches query terms. Reciprocal rank fusion combines the rankings and returns the top ten documents, along with identifiers of the dense matches. A later reranker selects passages for generation. This is the implemented retrieval procedure; its quality has not yet been quantitatively benchmarked. I will place this component within the full advisory workflow shortly.
-
 ## Slide 3  CONTENTS    0:20
 
 The presentation covers the introduction and research gap, the literature behind the approach, our methodology, the measured results, and the discussion of limitations and future work. I will begin with the farmer’s problem, then show how vision, sensing, and retrieval fit into the platform.
@@ -49,6 +45,10 @@ The advisory workflow uses retrieval-augmented generation, or RAG. It first retr
 For treatment planning, the system brings together retrieved knowledge, the visual diagnosis, and current sensor readings. It drafts a structured response with potential measures, application steps, schedules, and precautions. Before a plan is returned, a safety-audit node checks specified rules such as pesticide dosage and pre-harvest interval; a refinement node can revise flagged content.
 
 The retrieval algorithm shown near the start supplies the knowledge for these response paths. The next two slides explain treatment planning and the safety audit. These components describe an implemented workflow. The paper does not report quantitative retrieval scores, answer-faithfulness scores, or an agronomist assessment of audit effectiveness. Those evaluations are essential before treating generated plans as validated field guidance.
+
+## Slide 2  Hybrid retrieval combines two searches    0:45
+
+Before the overview, this slide highlights one technical building block of Leafy: hybrid retrieval. Algorithm 1 retrieves twenty candidates with dense vector search and twenty with BM25 keyword search. Dense search finds material with related meaning, while BM25 matches query terms. Reciprocal rank fusion combines the rankings and returns the top ten documents, along with identifiers of the dense matches. A later reranker selects passages for generation. This is the implemented retrieval procedure; its quality has not yet been quantitatively benchmarked. I will place this component within the full advisory workflow shortly.
 
 ## Slide 9  Treatment planning uses farm context    0:45
 
