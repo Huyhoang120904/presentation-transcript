@@ -38,62 +38,158 @@ Leafy’s physical node is based on an ESP32-CAM. A DHT11 measures air temperatu
 
 The node publishes telemetry through MQTT to the backend. The system stores raw data in PostgreSQL, keeps a current snapshot, and builds five-minute, hourly, and daily aggregates for the web and mobile dashboards. When a reading crosses a configured threshold, the platform can generate an alert and send a push notification. These readings can also enter the advisory context. The paper verifies this complete flow with a physical prototype, while leaving long-term calibration and weak-network reliability for future testing.
 
-## Slide 8  RAG chooses a response path, then checks the plan    1:05
+Slide 9 — RAG System Pipeline (0:45)
 
-The advisory workflow uses retrieval-augmented generation, or RAG. It first retrieves relevant agricultural material through both dense vector search and BM25 keyword search. Reciprocal rank fusion combines those rankings, and a reranker selects the most relevant passages. A router then chooses a path according to the question: a direct factual answer, a deeper answer that can extend retrieval to web sources, or a treatment-planning path.
+The RAG workflow has four main stages: retrieve, route, plan, and audit.
 
-For treatment planning, the system brings together retrieved knowledge, the visual diagnosis, and current sensor readings. It drafts a structured response with potential measures, application steps, schedules, and precautions. Before a plan is returned, a safety-audit node checks specified rules such as pesticide dosage and pre-harvest interval; a refinement node can revise flagged content.
+First, hybrid retrieval combines dense vector search and BM25 keyword matching. Reciprocal rank fusion and reranking improve the ordering of retrieved passages.
 
-The retrieval algorithm shown near the start supplies the knowledge for these response paths. The next two slides explain treatment planning and the safety audit. These components describe an implemented workflow. The paper does not report quantitative retrieval scores, answer-faithfulness scores, or an agronomist assessment of audit effectiveness. Those evaluations are essential before treating generated plans as validated field guidance.
+Next, a router selects one of three response paths: a fast factual answer, a deeper response that may include web retrieval, or treatment planning.
 
-## Slide 2  Hybrid retrieval combines two searches    0:45
+The planning path combines retrieved knowledge with the diagnosis and sensor readings.
 
-Before the overview, this slide highlights one technical building block of Leafy: hybrid retrieval. Algorithm 1 retrieves twenty candidates with dense vector search and twenty with BM25 keyword search. Dense search finds material with related meaning, while BM25 matches query terms. Reciprocal rank fusion combines the rankings and returns the top ten documents, along with identifiers of the dense matches. A later reranker selects passages for generation. This is the implemented retrieval procedure; its quality has not yet been quantitatively benchmarked. I will place this component within the full advisory workflow shortly.
+Finally, a safety audit checks the draft before it is returned.
 
-## Slide 9  Treatment planning uses farm context    0:45
+The following slides highlight three important algorithms in this workflow.
 
-Algorithm 3 shows the planning gate. If the best score among retrieved documents and web results falls below 0.7, the planner returns “cannot plan.” Otherwise it builds context from those sources, the current environmental readings, and any safety issues returned during refinement. The language model then generates a structured plan. The score threshold is part of the algorithm, not evidence that the resulting advice is agronomically validated.
+Slide 10 — Hybrid Retrieval (0:30)
 
-## Slide 10  The safety audit checks the draft plan    0:50
+Algorithm 1 describes our hybrid retrieval strategy.
 
-Algorithm 4 examines a generated plan before delivery. It applies hard checks against the plan, environmental state, and banned list. Depending on the outcome, it can pass the plan or return issues for refinement. An additional language-model audit checks the plan against safety rules. The implementation targets errors such as dosage and pre-harvest interval violations, but the paper does not quantify how reliably this node detects or corrects them.
+Dense search retrieves the top twenty semantically related documents, while BM25 retrieves twenty keyword-based matches.
 
-## Slide 11  The evaluation separates model tasks from integration    1:05
+Reciprocal rank fusion, or RRF, combines the two rankings and returns the top ten results.
 
-The study evaluates the two visual models according to their own tasks and then reports functional integration of the wider system. The slide identifies the image source as the Kaggle dataset organized-coffee-leaf-diseases, compiled from RoCoLe and other open sources. It covers Healthy, Leaf Miner, Phoma Leaf Spot, Red Spider Mite, and Coffee Leaf Rust. For classification, the study uses a balanced evaluation set of 806 images and repeats MobileNetV2 training under five random seeds. The paper describes this set as both its validation and final test set, so it is not an independent external farm test.
+A subsequent reranker selects the most relevant passages for generation.
 
-For leaf localization, YOLOv8n was trained for 50 epochs on annotated leaf regions and evaluated with mean average precision. The IoT and RAG components were assessed through operation of the implemented workflows, rather than through controlled reliability or answer-quality benchmarks. This separation matters: the measured classifier and detector metrics do not automatically establish performance for the complete diagnosis-to-advice chain.
+This procedure is implemented, although retrieval quality has not yet been quantitatively evaluated.
 
-## Slide 12  Classification performance varies across runs    1:20
+Slide 11 — Context-Aware Treatment Planning (0:35)
 
-This chart summarizes the five MobileNetV2 accuracy results before we look at the selected run’s training curves and confusion matrix. Seed 42 reached 95.04 percent; the other runs reached 94.04, 92.93, 92.93, and 94.17 percent. The mean was 93.82 percent with a standard deviation of 0.94 percentage points. The selected seed-42 run also achieved 95.18 percent macro F1, while the five-run mean macro F1 was 93.74 percent.
+Algorithm 3 describes how the system generates treatment plans.
 
-The training used ten epochs for the classification head followed by fifteen epochs of fine-tuning. Repeating the run helps show that the result is not entirely dependent on one initialization. At the same time, a spread of more than two percentage points between the highest and lowest accuracy warns us against presenting only the best run as typical performance. All of these figures come from the same balanced 806-image evaluation set. Performance under new farms, devices, lighting, and symptom stages remains to be established.
+First, it checks the relevance of the retrieved information. If the best source score is below 0.7, the planner returns a cannot-plan result.
 
-## Slide 13  MobileNetV2 training across two stages    0:55
+Otherwise, it combines retrieved documents, web results, current environmental readings, and any feedback from previous safety checks.
 
-This figure shows the selected seed-42 run over twenty-five epochs. The dashed line separates ten epochs of head training from fifteen epochs of fine-tuning. Validation accuracy and precision dip briefly when fine-tuning begins, then recover. By epoch twenty-five, validation accuracy reaches 95.04 percent. The curves describe optimization on this study’s validation set. Because that same 806-image set also served as the final test set, this plot does not establish performance on an independent farm dataset.
+The language model then generates a structured plan containing treatment measures, application steps, schedules, and precautions.
 
-## Slide 14  Rust has the lowest recall    1:00
+This relevance threshold acts as a planning gate, rather than a guarantee of advice quality.
 
-The confusion matrix gives the underlying counts for the selected run. Read each row as the actual class and each column as the predicted class. For Rust, the model correctly classified 158 of 180 images. It assigned the remaining 22 to another class, including 11 labelled Healthy. That produces 87.78 percent Rust recall, lower than the other four classes. The matrix makes the error pattern more concrete than overall accuracy alone. These are results on the shared validation and test set, so field performance remains unknown.
+Slide 12 — Safety Audit (0:35)
 
-## Slide 15  YOLOv8n leaf localization over 50 epochs    1:00
+Algorithm 4 introduces a safety-audit stage for generated treatment plans.
 
-The YOLOv8n figure shows falling training losses and improving localization metrics over fifty epochs. A dashed marker at epoch forty shows where mosaic augmentation was disabled. The detector reached 97.9 percent mAP at an intersection-over-union threshold of 0.50 at epoch forty-six. The stricter mAP averaged across thresholds from 0.50 to 0.95 reached 83.3 percent at epoch fifty. Those peaks occur at different checkpoints. They measure leaf boxes, not disease classification.
+The system first performs rule-based checks using the draft plan, environmental information, and predefined restrictions.
 
-## Slide 16  What the prototype establishes    1:15
+An additional language-model audit examines compliance with safety rules, including pesticide dosage and pre-harvest intervals.
 
-The implemented system demonstrates several useful operations. On-device TensorFlow Lite inference returned a preliminary two-stage diagnosis in approximately 400 milliseconds. With connectivity, the cloud path provided a more detailed diagnosis and stored it in crop history. The physical sensor node sent readings through MQTT to backend processing and PostgreSQL; the readings appeared in dashboards, and threshold events produced push notifications.
+If issues are detected, the plan can be returned for refinement.
 
-Those observations show that the components can work together. They are not yet a full reliability or deployment benchmark. The paper does not give latency distributions across different phones or quantify the effect of TensorFlow Lite quantization. It does not measure MQTT packet delivery, reconnection, or message recovery under deliberately degraded plantation networks. Likewise, the RAG routes and safety-audit step were implemented, but their quality and effectiveness were not quantitatively scored. This boundary is important when considering field deployment.
+This mechanism provides an additional screening layer, but its effectiveness still requires quantitative evaluation and expert validation.
 
-## Slide 17  The contribution is integration; validation comes next    1:15
+Slide 13 — Experimental Setup (0:50)
 
-Leafy’s contribution is an integrated path from a coffee leaf image and measured farm conditions to a contextual advisory draft. The detector and classifier provide promising measured results on the study data, and the physical prototype shows that sensing, storage, dashboards, alerts, and advisory routing can operate within one platform.
+We now move to experimental evaluation.
 
-The next step is broader validation. For vision, that means independent farms and image-capture devices, early symptom stages, and leaves with more than one condition. For sensing, it means calibration against reference instruments, outdoor durability, power profiling, and controlled tests of degraded connectivity. For advice, it means measuring retrieval and answer quality, testing the safety audit against known errors, and asking agronomists to assess the plans. A controlled end-to-end study is also needed to establish whether the combined workflow improves decisions in practice.
+The image dataset was obtained from Kaggle and compiled from RoCoLe and other open sources. It contains five categories: Healthy, Leaf Miner, Phoma Leaf Spot, Red Spider Mite, and Coffee Leaf Rust.
 
-## Slide 18  THANK YOU    0:25
+For classification, we used a balanced evaluation set of 806 images and repeated MobileNetV2 training with five random seeds.
 
-Thank you for your attention. Leafy offers a working foundation for combining edge vision, environmental sensing, and knowledge-guided advice in coffee farming. I welcome your questions about the model results, the physical prototype, and the validation needed before wider field use.
+YOLOv8n was trained separately for leaf localization.
+
+The IoT and RAG components were evaluated through functional integration rather than controlled quantitative benchmarks.
+
+An important limitation is that the 806-image evaluation set also served as the reported validation and test set. Independent field validation remains necessary.
+
+Slide 14 — MobileNetV2 Classification Results (0:50)
+
+This chart compares MobileNetV2 performance across five training runs.
+
+The model achieved a mean accuracy of 93.82 percent, with a standard deviation of 0.94 percentage points.
+
+The best run, using seed 42, reached 95.04 percent accuracy and 95.18 percent macro F1.
+
+Accuracy across the five runs ranged from 92.93 to 95.04 percent.
+
+These results suggest relatively consistent performance across different initializations.
+
+However, they were obtained from the same evaluation dataset, so they do not establish generalization to new farms or image-capture conditions.
+
+Slide 15 — MobileNetV2 Training Curves (0:35)
+
+This figure shows the selected model's training process.
+
+Training was divided into two stages: ten epochs for the classification head, followed by fifteen epochs of fine-tuning.
+
+We can observe a brief decrease in validation performance when fine-tuning begins, followed by recovery and improvement.
+
+By epoch twenty-five, validation accuracy reached 95.04 percent.
+
+These curves illustrate the optimization process, while independent external evaluation remains future work.
+
+Slide 16 — Confusion Matrix (0:40)
+
+The confusion matrix provides a more detailed view of classification errors.
+
+For the selected run, Coffee Leaf Rust has the lowest recall among the five classes.
+
+The model correctly classified 158 out of 180 Rust images, corresponding to 87.78 percent recall.
+
+Of the twenty-two misclassified Rust images, eleven were predicted as Healthy.
+
+This is particularly important because missed disease cases could affect subsequent treatment decisions.
+
+Therefore, improving difficult-class recognition remains a priority.
+
+Slide 17 — YOLOv8n Detection Results (0:40)
+
+Next, we evaluate the leaf-localization model.
+
+YOLOv8n was trained for fifty epochs, with training losses generally decreasing and detection performance improving.
+
+At epoch forty-six, the model achieved 97.9 percent mAP at IoU 0.50.
+
+At epoch fifty, the stricter mAP averaged from IoU 0.50 to 0.95 reached 83.3 percent.
+
+These results demonstrate promising performance for leaf localization.
+
+However, these are detection metrics and should not be interpreted as disease-classification accuracy.
+
+Slide 18 — Results and Future Work (0:55)
+
+Beyond the individual models, we also tested the integrated prototype.
+
+The on-device TensorFlow Lite pipeline provided preliminary diagnosis in approximately 400 milliseconds, supporting offline operation.
+
+The physical IoT node successfully transmitted measurements through MQTT. Data appeared on dashboards, and configured threshold events triggered push notifications.
+
+These observations demonstrate functional integration across the platform.
+
+However, several aspects remain unbenchmarked, including inference latency across different devices, sensor communication reliability under weak networks, and the quality of RAG-generated advice.
+
+These are important next steps before wider deployment.
+
+Slide 19 — Conclusion and Validation Priorities (0:55)
+
+To conclude, Leafy's main contribution is the integration of edge AI, environmental sensing, and retrieval-augmented decision support into one framework.
+
+The vision models achieved promising results on the study dataset, while the physical prototype demonstrated working sensing, monitoring, notification, and advisory workflows.
+
+Our next priorities are divided into three areas.
+
+For vision, we need independent field datasets and more complex disease conditions.
+
+For IoT, we need sensor calibration, long-term durability testing, and network reliability evaluation.
+
+For RAG, we need retrieval and answer-quality benchmarks, safety-audit testing, and assessment by agricultural experts.
+
+These evaluations are necessary to establish the system's practical reliability.
+
+Slide 20 — Thank You (0:15)
+
+Thank you for your attention.
+
+We hope Leafy provides a useful foundation for more intelligent and context-aware coffee farming.
+
+I welcome your questions.
